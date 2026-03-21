@@ -1,0 +1,196 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { AssignmentsService } from './assignments.service';
+import { CreateAssignmentDto } from './dto/create-assignment.dto';
+import { SimpleUserDto } from 'src/users/dto/simple-user.dto';
+import { User } from 'src/auth/decorators/user.decorator';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { UpdateAssignmentDto } from './dto/update-assignment.dto';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+
+@ApiTags('assignments')
+@ApiBearerAuth()
+@Controller('assignments')
+export class AssignmentsController {
+  constructor(private readonly assignmentsService: AssignmentsService) {}
+
+  @ApiOperation({ summary: 'Create a new assignment' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'mentor')
+  @Post()
+  async create(
+    @Body() payLoad: CreateAssignmentDto,
+    @User() user: SimpleUserDto,
+  ) {
+    return this.assignmentsService.create(payLoad, user);
+  }
+
+  @ApiOperation({ summary: 'Get all assignments by user' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['Todo', 'InProgress', 'Submitted', 'Reviewed'],
+  })
+  @ApiQuery({
+    name: 'isAssigned',
+    required: false,
+    type: 'boolean',
+  })
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  async findAllByUser(
+    @User() user: SimpleUserDto,
+    @Query('status') status?: 'Todo' | 'InProgress' | 'Submitted' | 'Reviewed',
+    @Query('isAssigned') isAssigned?: boolean,
+  ) {
+    return this.assignmentsService.findAllByUser(user, status, isAssigned);
+  }
+
+  @ApiOperation({ summary: 'Get all assignments' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['Todo', 'InProgress', 'Submitted', 'Reviewed'],
+  })
+  @ApiQuery({
+    name: 'isAssigned',
+    required: false,
+    type: 'boolean',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Get('all')
+  async findAll(
+    @Query('status') status?: 'Todo' | 'InProgress' | 'Submitted' | 'Reviewed',
+    @Query('isAssigned') isAssigned?: boolean,
+  ) {
+    return this.assignmentsService.findAll(status, isAssigned);
+  }
+
+  @ApiOperation({ summary: 'Get a single assignment by ID' })
+  @ApiQuery({
+    name: 'isAssigned',
+    required: false,
+    type: 'boolean',
+    default: true,
+  })
+  @UseGuards(JwtAuthGuard)
+  @Get(':id')
+  async findOne(
+    @Param('id') id: string,
+    @User() user: SimpleUserDto,
+    @Query('isAssigned') isAssigned?: boolean,
+  ) {
+    return this.assignmentsService.findOne(id, user, isAssigned);
+  }
+
+  @ApiOperation({ summary: 'Update assignment status' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['Todo', 'InProgress', 'Submitted', 'Reviewed'],
+        },
+      },
+      required: ['status'],
+    },
+  })
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/status')
+  async updateStatus(
+    @Param('id') id: string,
+    @User() user: SimpleUserDto,
+    @Body('status') status: 'Todo' | 'InProgress' | 'Submitted' | 'Reviewed',
+  ) {
+    return this.assignmentsService.updateStatus(id, user, status);
+  }
+
+  @ApiOperation({ summary: 'Submit an assignment' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        submittedLink: { type: 'string' },
+      },
+      required: ['submittedLink'],
+    },
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('intern')
+  @Put(':id/submit')
+  async submit(
+    @Param('id') id: string,
+    @User() user: SimpleUserDto,
+    @Body('submittedLink') payLoad: string,
+  ) {
+    return this.assignmentsService.submit(id, user, payLoad);
+  }
+
+  @ApiOperation({ summary: 'Review an assignment' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        feedback: { type: 'string' },
+      },
+      required: ['feedback'],
+    },
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('mentor')
+  @Put(':id/review')
+  async review(
+    @Param('id') id: string,
+    @User() user: SimpleUserDto,
+    @Body('feedback') payLoad: string,
+  ) {
+    return this.assignmentsService.review(id, user, payLoad);
+  }
+
+  @ApiOperation({ summary: 'Restore a deleted assignment' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'mentor')
+  @Put(':id/restore')
+  async restore(@Param('id') id: string, @User() user: SimpleUserDto) {
+    return this.assignmentsService.restore(id, user);
+  }
+
+  @ApiOperation({ summary: 'Update an assignment' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'mentor')
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @User() user: SimpleUserDto,
+    @Body() payLoad: UpdateAssignmentDto,
+  ) {
+    return this.assignmentsService.update(id, user, payLoad);
+  }
+
+  @ApiOperation({ summary: 'Delete an assignment' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'mentor')
+  @Delete(':id')
+  async delete(@Param('id') id: string, @User() user: SimpleUserDto) {
+    return this.assignmentsService.softDelete(id, user);
+  }
+}

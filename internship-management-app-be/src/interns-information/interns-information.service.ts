@@ -1,0 +1,391 @@
+import {
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { InternInformation } from './entities/intern-information.entity';
+import { Repository } from 'typeorm';
+import { CreateInternInformationDto } from './dto/create-intern-information.dto';
+import { InternInformationDto } from './dto/intern-information.dto';
+import { plainToInstance } from 'class-transformer';
+import { UpdateInternInformationDto } from './dto/update-intern-information.dto';
+import { SimpleUserDto } from 'src/users/dto/simple-user.dto';
+import { Cron } from '@nestjs/schedule';
+
+export interface findOneInternResponse {
+  internInformation: InternInformationDto;
+  countAssignments: {
+    total: number;
+    todo: number;
+    inProgress: number;
+    submitted: number;
+    reviewed: number;
+  };
+}
+
+@Injectable()
+export class InternsInformationService {
+  constructor(
+    @InjectRepository(InternInformation)
+    private readonly internInfoRepo: Repository<InternInformation>,
+  ) {}
+
+  async create(
+    createInternInfoDto: CreateInternInformationDto,
+  ): Promise<InternInformation> {
+    const internInfo = this.internInfoRepo.create(createInternInfoDto);
+    return await this.internInfoRepo.save(internInfo);
+  }
+
+  async findAll(): Promise<InternInformationDto[]> {
+    try {
+      const internInfos = await this.internInfoRepo.find({
+        where: { isDeleted: false },
+        relations: ['intern', 'mentor', 'plan'],
+      });
+      return plainToInstance(InternInformationDto, internInfos, {
+        excludeExtraneousValues: true,
+      });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error fetching intern information',
+      );
+    }
+  }
+
+  async findOne(id: string): Promise<InternInformationDto | null> {
+    try {
+      const internInfo = await this.internInfoRepo.findOne({
+        where: {
+          id: id,
+          isDeleted: false,
+        },
+      });
+
+      if (!internInfo) {
+        throw new NotFoundException('Intern information not found');
+      }
+
+      return plainToInstance(InternInformationDto, internInfo, {
+        excludeExtraneousValues: true,
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Error fetching intern information: ' + error.message,
+      );
+    }
+  }
+
+  async findOneForIntern(user: SimpleUserDto): Promise<findOneInternResponse> {
+    try {
+      const plan = await this.internInfoRepo
+        .createQueryBuilder('internInfo')
+        .leftJoinAndSelect('internInfo.plan', 'plan')
+        .leftJoinAndSelect('plan.skills', 'planSkill')
+        .leftJoinAndSelect('planSkill.skill', 'skill')
+        .leftJoinAndSelect(
+          'plan.assignments',
+          'assignment',
+          'assignment.isAssigned = true AND assignment.assignedTo = :internId',
+          {
+            internId: user.id,
+          },
+        )
+        .leftJoinAndSelect('assignment.task', 'task')
+        .leftJoinAndSelect('assignment.creator', 'assignmentCreator')
+        .leftJoinAndSelect('assignment.skills', 'assignmentSkill')
+        .leftJoinAndSelect('assignmentSkill.skill', 'assignmentSkillDetail')
+        .leftJoinAndSelect('internInfo.mentor', 'mentor')
+        .where('internInfo.internId = :internId', { internId: user.id })
+        .andWhere('internInfo.isDeleted = false')
+        .getOne();
+
+      if (!plan) {
+        throw new NotFoundException(`Training plan not found for intern`);
+      }
+
+      const internInformationDto = plainToInstance(InternInformationDto, plan, {
+        excludeExtraneousValues: true,
+      });
+
+      const countAssignments = {
+        total: plan.plan.assignments.length,
+        todo: plan.plan.assignments.filter(
+          (assignment) => assignment.status === 'Todo',
+        ).length,
+        inProgress: plan.plan.assignments.filter(
+          (assignment) => assignment.status === 'InProgress',
+        ).length,
+        submitted: plan.plan.assignments.filter(
+          (assignment) => assignment.status === 'Submitted',
+        ).length,
+        reviewed: plan.plan.assignments.filter(
+          (assignment) => assignment.status === 'Reviewed',
+        ).length,
+      };
+
+      return {
+        internInformation: internInformationDto,
+        countAssignments: countAssignments,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        `Error fetching training plan for intern: ${error.message}`,
+      );
+    }
+  }
+
+  async findByMentorId(mentorId: string): Promise<InternInformation[]> {
+    return this.internInfoRepo.find({
+      where: { mentorId, isDeleted: false },
+      relations: ['intern', 'plan'],
+      order: { startDate: 'DESC' },
+    });
+  }
+
+  async findByInternId(internId: string): Promise<InternInformation | null> {
+    return this.internInfoRepo.findOne({
+      where: {
+        internId: internId,
+        isDeleted: false,
+      },
+    });
+  }
+
+  async findOneByInternId(
+    internId: string,
+    user: SimpleUserDto,
+  ): Promise<InternInformationDto> {
+    try {
+      if (user.role === 'intern' && user.id !== internId) {
+        throw new ForbiddenException(
+          'You do not have permission to access this intern information',
+        );
+      }
+
+      const internInformation = await this.internInfoRepo
+        .createQueryBuilder('internInfo')
+        .leftJoinAndSelect('internInfo.plan', 'plan')
+        .leftJoinAndSelect('plan.skills', 'planSkill')
+        .leftJoinAndSelect('planSkill.skill', 'skill')
+        .leftJoinAndSelect(
+          'plan.assignments',
+          'assignment',
+          'assignment.isAssigned = true AND assignment.assignedTo = :internId',
+          {
+            internId: internId,
+          },
+        )
+        .leftJoinAndSelect('assignment.task', 'task')
+        .leftJoinAndSelect('assignment.creator', 'assignmentCreator')
+        .leftJoinAndSelect('assignment.skills', 'assignmentSkill')
+        .leftJoinAndSelect('assignmentSkill.skill', 'assignmentSkillDetail')
+        .leftJoinAndSelect('internInfo.mentor', 'mentor')
+        .leftJoinAndSelect('internInfo.intern', 'intern')
+        .where('internInfo.internId = :internId', { internId: internId })
+        .andWhere('internInfo.isDeleted = false')
+        .getOne();
+
+      if (!internInformation) {
+        throw new NotFoundException(`Training plan not found for intern`);
+      }
+
+      if (user.role === 'mentor' && user.id !== internInformation.mentorId) {
+        throw new ForbiddenException(
+          'You do not have permission to access this intern information',
+        );
+      }
+
+      return plainToInstance(InternInformationDto, internInformation, {
+        excludeExtraneousValues: true,
+      });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        `Error fetching training plan for intern: ${error.message}`,
+      );
+    }
+  }
+
+  async updateStatus(
+    id: string,
+    status: 'Completed' | 'InProgress' | 'Dropped',
+  ): Promise<InternInformationDto> {
+    try {
+      const internInfo = await this.internInfoRepo.findOne({
+        where: { id: id, isDeleted: false },
+      });
+
+      if (!internInfo) {
+        throw new NotFoundException('Intern information not found');
+      }
+
+      internInfo.status = status;
+      await this.internInfoRepo.save(internInfo);
+
+      return plainToInstance(InternInformationDto, internInfo, {
+        excludeExtraneousValues: true,
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Error updating intern status: ' + error.message,
+      );
+    }
+  }
+
+  async updatePlan(
+    id: string,
+    planId: string,
+    user: any,
+  ): Promise<InternInformationDto | null> {
+    try {
+      const internInfo = await this.internInfoRepo.findOne({
+        where: { id: id, isDeleted: false },
+      });
+
+      if (!internInfo) {
+        throw new NotFoundException('Intern information not found');
+      }
+
+      if (user.role === 'mentor' && internInfo?.mentorId !== user.id) {
+        throw new ForbiddenException(
+          'You do not have permission to update this intern information',
+        );
+      }
+
+      internInfo.planId = planId;
+      await this.internInfoRepo.save(internInfo);
+
+      return plainToInstance(InternInformationDto, internInfo, {
+        excludeExtraneousValues: true,
+      });
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Error updating intern plan: ' + error.message,
+      );
+    }
+  }
+
+  async updateMentor(
+    id: string,
+    mentorId: string,
+  ): Promise<InternInformationDto> {
+    try {
+      const internInfo = await this.internInfoRepo.findOne({
+        where: { id: id, isDeleted: false },
+      });
+
+      if (!internInfo) {
+        throw new NotFoundException('Intern information not found');
+      }
+
+      internInfo.mentorId = mentorId;
+      await this.internInfoRepo.save(internInfo);
+
+      return plainToInstance(InternInformationDto, internInfo, {
+        excludeExtraneousValues: true,
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Error updating intern mentor: ' + error.message,
+      );
+    }
+  }
+
+  async update(
+    id: string,
+    updateData: UpdateInternInformationDto,
+  ): Promise<InternInformationDto> {
+    try {
+      const internInfo = await this.internInfoRepo.findOne({
+        where: { id: id, isDeleted: false },
+      });
+
+      if (!internInfo) {
+        throw new NotFoundException('Intern information not found');
+      }
+
+      Object.assign(internInfo, updateData);
+      await this.internInfoRepo.save(internInfo);
+
+      return plainToInstance(InternInformationDto, internInfo, {
+        excludeExtraneousValues: true,
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Error updating intern information: ' + error.message,
+      );
+    }
+  }
+
+  @Cron('0 0 1 * * *')
+  async handleCronUpdateStatus(): Promise<void> {
+    const today = new Date();
+
+    const interns = await this.internInfoRepo
+      .createQueryBuilder('interns')
+      .where('interns.status IN (:...statuses)', {
+        statuses: ['Onboarding', 'InProgress'],
+      })
+      .andWhere('interns.endDate <= :today', { today })
+      .leftJoinAndSelect('interns.plan', 'plan')
+      .leftJoinAndSelect(
+        'plan.assignments',
+        'assignments',
+        'assignments.assignedTo = interns.internId',
+      )
+      .getMany();
+
+    // Check if all assignments are 'Submitted' or 'Reviewed'
+    for (const intern of interns) {
+      const allAssignmentsSubmittedOrReviewed = intern.plan.assignments.every(
+        (assignment) =>
+          assignment.status === 'Submitted' || assignment.status === 'Reviewed',
+      );
+
+      if (allAssignmentsSubmittedOrReviewed) {
+        intern.status = 'Completed';
+      } else {
+        intern.status = 'Dropped';
+      }
+
+      await this.internInfoRepo.save(intern);
+    }
+  }
+}

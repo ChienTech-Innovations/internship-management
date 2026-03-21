@@ -1,0 +1,101 @@
+# export class CreateUserDto {
+#   email: string;
+#   username: string;
+#   password: string;
+#   full_name: string;
+#   phone_number?: string;
+#   dob?: Date;
+#   address?: string;
+#   role: 'admin' | 'mentor' | 'intern';
+#   status?: 'active' | 'inactive';
+#   is_assigned?: boolean;
+#   is_deleted?: boolean;
+#   intern_information?: CreateInternInformationDto;
+# }
+
+@id = 2a827f6b-918a-4c83-97f1-b55a78aa3af7
+@token = {{login.response.body.data.access_token}}
+
+###
+# @name login
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin1",
+  "password": "123456"
+}
+
+###
+# @name create-user
+POST http://localhost:3000/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "email": "admin3@gmail.com",
+  "username": "admin3",
+  "password": "123456",
+  "fullName": "Admin3",
+  "role": "admin"
+}
+
+###
+# @name get-all-users
+GET http://localhost:3000/users?role=mentor
+Authorization: Bearer {{token}}
+
+### 
+# @name create-intern
+POST http://localhost:3000/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+
+  "email": "intern3@gmail.com",
+  "username": "intern3",
+  "password": "123456",
+  "fullName": "Intern3",
+  "role": "intern",
+  "internInformation": {
+    "field": "Frontend Development",
+    "startDate": "2025-07-14",
+    "endDate": "2025-08-14"
+  }
+}
+
+###
+# @name get-user-by-id
+GET http://localhost:3000/users/{{id}}
+Authorization: Bearer {{token}}
+
+###
+# @name get-user-profile
+GET http://localhost:3000/users/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+
+###
+# @name update-user-by-id
+PUT http://localhost:3000/users/{{id}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "fullName": "Intern1-5",
+  "internInformation": {
+    "field": "Intern Software Engineering"
+  }
+}
+
+###
+# @name update-profile
+PUT http://localhost:3000/users/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "fullName": "Intern1-9"
+}
