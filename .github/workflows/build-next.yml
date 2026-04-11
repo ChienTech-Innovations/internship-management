@@ -44,7 +44,6 @@ jobs:
     outputs:
       image-uri: ${{ steps.build.outputs.image-uri }}
       image-tag: ${{ steps.tag.outputs.tag }}
-      api-url: ${{ steps.api-url.outputs.url }}
 
     steps:
       - name: Checkout
@@ -57,20 +56,20 @@ jobs:
       - name: Resolve image tag
         id: tag
         env:
-          INPUT_TAG: ${{ github.event.inputs.image-tag }}
           SHA: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.number }}
+          BRANCH: ${{ github.ref_name }}
         run: |
-          TAG="${INPUT_TAG:-$SHA}"
+          SHORT_SHA="${SHA::7}"
+          if [ "${EVENT_NAME}" = "pull_request" ]; then
+            TAG="pr-${PR_NUMBER}-${SHORT_SHA}"
+          else
+            # Sanitize branch name for use as Docker tag
+            SAFE_BRANCH="$(echo "${BRANCH}" | sed 's/[^a-zA-Z0-9._-]/-/g')"
+            TAG="${SAFE_BRANCH}-${SHORT_SHA}"
+          fi
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-
-      - name: Resolve API base URL
-        id: api-url
-        env:
-          INPUT_URL: ${{ github.event.inputs.api-base-url }}
-          DEFAULT_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
-        run: |
-          URL="${INPUT_URL:-${DEFAULT_URL:-http://localhost:3001}}"
-          echo "url=${URL}" >> "$GITHUB_OUTPUT"
 
       - name: Build & push frontend to ECR
         id: build
@@ -80,6 +79,7 @@ jobs:
           aws-oidc-role: ${{ vars.AWS_OIDC_ROLE }}
           ecr-repository: ${{ steps.output-env.outputs.ecr-repository }}
           image-tag: ${{ steps.tag.outputs.tag }}
+          tag-latest: ${{ github.ref_name == 'main' && github.event_name == 'push' }}
           context: ${{ env.BUILD_CONTEXT }}
           dockerfile: ${{ env.BUILD_DOCKERFILE }}
           build-args: |
