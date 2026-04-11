@@ -52,7 +52,7 @@ on:
         type: string
         default: frontend
     secrets:
-      aws-role-arn:
+      aws-oidc-role:
         description: IAM role ARN to assume via OIDC
         required: true
 
@@ -69,7 +69,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.aws-role-arn }}
+          role-to-assume: ${{ vars.aws-oidc-role }}
           aws-region: ${{ inputs.aws-region }}
 
       # ── Backend ────────────────────────────────────────────────────────────────

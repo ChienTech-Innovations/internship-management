@@ -5,7 +5,7 @@ inputs:
   aws-region:
     description: AWS region where ECR lives
     required: true
-  aws-role-arn:
+  aws-oidc-role:
     description: IAM role ARN to assume via OIDC
     required: true
   ecr-repository:
@@ -38,9 +38,9 @@ runs:
   using: composite
   steps:
     - name: Configure AWS credentials (OIDC)
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@v6
       with:
-        role-to-assume: ${{ inputs.aws-role-arn }}
+        role-to-assume: ${{ inputs.aws-oidc-role }}
         aws-region: ${{ inputs.aws-region }}
 
     - name: Login to Amazon ECR
@@ -57,10 +57,10 @@ runs:
         echo "registry=${REGISTRY}" >> "$GITHUB_OUTPUT"
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@v4
 
     - name: Build and push
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v7
       with:
         context: ${{ inputs.context }}
         file: ${{ inputs.dockerfile }}

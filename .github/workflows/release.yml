@@ -30,7 +30,7 @@ jobs:
         uses: ./.github/actions/build-push-ecr
         with:
           aws-region: ${{ env.AWS_REGION }}
-          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+          aws-oidc-role: ${{ vars.AWS_OIDC_ROLE }}
           ecr-repository: internship/backend
           image-tag: ${{ github.ref_name }}
           context: ./be
@@ -56,7 +56,7 @@ jobs:
         uses: ./.github/actions/build-push-ecr
         with:
           aws-region: ${{ env.AWS_REGION }}
-          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+          aws-oidc-role: ${{ vars.AWS_OIDC_ROLE }}
           ecr-repository: internship/frontend
           image-tag: ${{ github.ref_name }}
           context: ./fe
@@ -81,4 +81,4 @@ jobs:
       backend-task-definition: ${{ vars.ECS_BACKEND_TASKDEF_PRODUCTION }}
       frontend-task-definition: ${{ vars.ECS_FRONTEND_TASKDEF_PRODUCTION }}
     secrets:
-      aws-role-arn: ${{ secrets.AWS_ROLE_ARN_PRODUCTION }}
+      aws-oidc-role: ${{ vars.AWS_OIDC_ROLE_PRODUCTION }}

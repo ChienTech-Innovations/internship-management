@@ -41,9 +41,9 @@ All workflows are in place. Here's a summary of everything created:
 
 | Secret | Used by |
 |--------|---------|
-| `AWS_ROLE_ARN` | Build workflows (OIDC for ECR push) |
-| `AWS_ROLE_ARN_STAGING` | Staging deploy |
-| `AWS_ROLE_ARN_PRODUCTION` | Production deploy |
+| `AWS_OIDC_ROLE` | Build workflows (OIDC for ECR push) |
+| `AWS_OIDC_ROLE_STAGING` | Staging deploy |
+| `AWS_OIDC_ROLE_PRODUCTION` | Production deploy |
 
 | Variable | Used by |
 |----------|---------|

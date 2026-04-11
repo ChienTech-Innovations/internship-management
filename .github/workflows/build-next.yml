@@ -1,0 +1,86 @@
+name: Build & Push Frontend
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - "fe/**"
+      - ".github/workflows/build-next.yml"
+      - ".github/actions/build-push-ecr/**"
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - "fe/**"
+      - ".github/workflows/build-next.yml"
+      - ".github/actions/build-push-ecr/**"
+      - ".github/actions/output-env/**"
+  workflow_dispatch:
+
+permissions:
+  deployments: read
+  pull-requests: read
+  repository-projects: read
+  actions: write
+  checks: read
+  contents: write
+  packages: write
+  id-token: write
+
+env:
+  BUILD_CONTEXT: ./fe
+  BUILD_DOCKERFILE: ./fe/Dockerfile
+  BUILD_BUILD_ARGS: |
+    NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+
+jobs:
+  build:
+    environment: HUB
+    name: Build frontend image
+    runs-on: ubuntu-latest
+    outputs:
+      image-uri: ${{ steps.build.outputs.image-uri }}
+      image-tag: ${{ steps.tag.outputs.tag }}
+      api-url: ${{ steps.api-url.outputs.url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Output environment variables
+        id: output-env
+        uses: ./.github/actions/output-env
+
+      - name: Resolve image tag
+        id: tag
+        env:
+          INPUT_TAG: ${{ github.event.inputs.image-tag }}
+          SHA: ${{ github.sha }}
+        run: |
+          TAG="${INPUT_TAG:-$SHA}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve API base URL
+        id: api-url
+        env:
+          INPUT_URL: ${{ github.event.inputs.api-base-url }}
+          DEFAULT_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+        run: |
+          URL="${INPUT_URL:-${DEFAULT_URL:-http://localhost:3001}}"
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push frontend to ECR
+        id: build
+        uses: ./.github/actions/build-push-ecr
+        with:
+          aws-region: ${{ steps.output-env.outputs.region }}
+          aws-oidc-role: ${{ vars.AWS_OIDC_ROLE }}
+          ecr-repository: ${{ steps.output-env.outputs.ecr-repository }}
+          image-tag: ${{ steps.tag.outputs.tag }}
+          context: ${{ env.BUILD_CONTEXT }}
+          dockerfile: ${{ env.BUILD_DOCKERFILE }}
+          build-args: |
+            ${{ env.BUILD_BUILD_ARGS }}
