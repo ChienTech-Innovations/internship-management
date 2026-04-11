@@ -3,7 +3,9 @@ FROM node:22-slim AS deps
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+# Keep dotenv v17 while bypassing upstream peer conflict from optional integrations.
+# Also harden install against transient network timeouts in container builds.
+RUN npm ci --legacy-peer-deps
 
 # ─── Stage 2: Build ───────────────────────────────────────────────────────────
 FROM node:22-slim AS builder
@@ -14,7 +16,7 @@ COPY . .
 RUN npm run build
 
 # Prune dev dependencies for the runtime stage
-RUN npm ci --omit=dev
+RUN npm prune --omit=dev --legacy-peer-deps
 
 # ─── Stage 3: Production runtime ──────────────────────────────────────────────
 FROM node:22-slim AS runner

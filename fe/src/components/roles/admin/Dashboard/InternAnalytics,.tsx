@@ -153,7 +153,7 @@ export const InternAnalytics = ({ internsData }: IProps) => {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
               <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
               <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 10 }} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v: number, _n: string, props: { payload: { fullName?: string } }) => [v, props.payload?.fullName || ""]} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v: number, _n: string, props: { payload?: { fullName?: string } }) => [v, props.payload?.fullName || ""]} />
               <Bar dataKey="count" fill="#06B6D4" radius={[0, 4, 4, 0]} name="Interns" />
             </BarChart>
           </ResponsiveContainer>

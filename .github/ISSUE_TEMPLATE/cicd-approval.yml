@@ -1,0 +1,45 @@
+name: Cicd Deployment Approval
+description: Manual approval gate before cicd apply
+title: "Cicd apply approval - {{ENVIRONMENT}}"
+labels:
+  - cicd-approval
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!WARNING]
+        > Approving will apply infrastructure changes to **`{{ENVIRONMENT}}`** immediately and cannot be undone automatically.
+
+  - type: textarea
+    id: deployment_summary
+    attributes:
+      label: Deployment Summary
+      value: |
+        | Field | Value |
+        |---|---|
+        | **Environment** | `{{ENVIRONMENT}}` |
+        | **Working directory** | `{{WORKING_DIR}}` |
+        | **Triggered by** | @{{ACTOR}} |
+        | **Run** | [#{{RUN_ID}}]({{RUN_URL}}) |
+
+        ## Checklist before approving
+
+        > [!IMPORTANT]
+        > Please review the Cicd plan output before approving.
+
+        - [ ] Reviewed the [plan output]({{RUN_URL}}) - no unexpected changes
+        - [ ] Verified the correct environment (`{{ENVIRONMENT}}`) is targeted
+        - [ ] Confirmed no sensitive resources are being destroyed
+
+        ## Decision
+
+        Reply with one of the following commands:
+
+        | Command | Action |
+        |---|---|
+        | `approved` | Proceed with `cicd apply` |
+        | `denied` | Cancel the deployment |
+
+    validations:
+      required: false
