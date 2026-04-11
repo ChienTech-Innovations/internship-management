@@ -63,11 +63,11 @@ jobs:
         run: |
           SHORT_SHA="${SHA::7}"
           if [ "${EVENT_NAME}" = "pull_request" ]; then
-            TAG="pr-${PR_NUMBER}-${SHORT_SHA}"
+            TAG="be-pr-${PR_NUMBER}-${SHORT_SHA}"
           else
             # Sanitize branch name for use as Docker tag
             SAFE_BRANCH="$(echo "${BRANCH}" | sed 's/[^a-zA-Z0-9._-]/-/g')"
-            TAG="${SAFE_BRANCH}-${SHORT_SHA}"
+            TAG="be-${SAFE_BRANCH}-${SHORT_SHA}"
           fi
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
@@ -79,6 +79,6 @@ jobs:
           aws-oidc-role: ${{ vars.AWS_OIDC_ROLE }}
           ecr-repository: ${{ steps.output-env.outputs.ecr-repository }}
           image-tag: ${{ steps.tag.outputs.tag }}
-          tag-latest: ${{ github.ref_name == 'main' && github.event_name == 'push' }}
+          tag-latest: "false"
           context: ${{ env.BUILD_CONTEXT }}
           dockerfile: ${{ env.BUILD_DOCKERFILE }}
