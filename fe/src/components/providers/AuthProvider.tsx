@@ -44,6 +44,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         pathname === "/" &&
         !window.history.state?.fromRedirect
       ) {
+        /* empty */
       }
     }
   }, [isHydrated, isAuthenticated, userDetails, router, pathname]);

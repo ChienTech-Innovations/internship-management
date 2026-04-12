@@ -20,7 +20,7 @@ type Props = {
 const ListIntern = ({ data }: Props) => {
   const interns = data?.myInterns ?? [];
 
-  const { displayedItems, hasMore, isLoadingMore, scrollContainerRef } =
+  const { displayedItems, isLoadingMore, scrollContainerRef } =
     useInfiniteScroll(interns, { pageSize: 5, threshold: 100 });
 
   return (
@@ -31,7 +31,10 @@ const ListIntern = ({ data }: Props) => {
           <h1 className="text-lg md:text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
             My Interns
           </h1>
-          <Button variant="outline" className="w-16 h-8 text-sm rounded-lg hover:bg-blue-50 transition-colors">
+          <Button
+            variant="outline"
+            className="w-16 h-8 text-sm rounded-lg hover:bg-blue-50 transition-colors"
+          >
             View All
           </Button>
         </div>
@@ -43,7 +46,10 @@ const ListIntern = ({ data }: Props) => {
         {displayedItems.length > 0 ? (
           <>
             {displayedItems.map((intern) => (
-              <Card key={intern.id} className="rounded-xl hover:shadow-md transition-all duration-200 border-slate-200/80">
+              <Card
+                key={intern.id}
+                className="rounded-xl hover:shadow-md transition-all duration-200 border-slate-200/80"
+              >
                 <div className="p-3 flex items-center justify-between">
                   <div className="flex gap-3 items-center">
                     <Avatar className="w-12 h-12 ring-2 ring-emerald-200 ring-offset-1">
@@ -63,8 +69,8 @@ const ListIntern = ({ data }: Props) => {
                         intern?.status === "Completed"
                           ? "bg-emerald-100 text-emerald-700 border-emerald-300"
                           : intern?.status === "InProgress"
-                          ? "bg-blue-100 text-blue-700 border-blue-300"
-                          : "bg-orange-100 text-orange-700 border-orange-300"
+                            ? "bg-blue-100 text-blue-700 border-blue-300"
+                            : "bg-orange-100 text-orange-700 border-orange-300"
                       }`}
                     >
                       {intern?.status}

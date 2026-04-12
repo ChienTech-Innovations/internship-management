@@ -24,7 +24,7 @@ const AssignmentAwaitingReview = ({ assignmentsWait, handleView }: Props) => {
     [assignmentsWait]
   );
 
-  const { displayedItems, hasMore, isLoadingMore, scrollContainerRef } =
+  const { displayedItems, isLoadingMore, scrollContainerRef } =
     useInfiniteScroll(submittedAssignments, { pageSize: 4, threshold: 100 });
 
   return (

@@ -1,16 +1,60 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import react from "eslint-plugin-react";
+import reactHooks from "eslint-plugin-react-hooks";
+import jsxA11y from "eslint-plugin-jsx-a11y";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+export default [
+  // ✅ ignore build + deps
+  {
+    ignores: [".next/**", "node_modules/**", "dist/**", "build/**"]
+  },
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+  // base JS
+  js.configs.recommended,
 
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  // TS
+  ...tseslint.configs.recommended,
+
+  {
+    // ✅ set environment (fix window, document, fetch...)
+    languageOptions: {
+      globals: {
+        window: "readonly",
+        document: "readonly",
+        fetch: "readonly",
+        URL: "readonly",
+        location: "readonly"
+      }
+    },
+
+    plugins: {
+      react,
+      "react-hooks": reactHooks,
+      "jsx-a11y": jsxA11y
+    },
+
+    rules: {
+      // React 19
+      "react/react-in-jsx-scope": "off",
+
+      // Hooks
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
+
+      // TS
+      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
+
+      // optional: giảm noise
+      "@typescript-eslint/no-empty-object-type": "off",
+      "no-empty": "warn"
+    },
+
+    settings: {
+      react: {
+        version: "detect"
+      }
+    }
+  }
 ];
-
-export default eslintConfig;
