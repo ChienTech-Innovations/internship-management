@@ -36,7 +36,7 @@ env:
   # Baked at build time. Set repo variable NEXT_PUBLIC_API_BASE_URL_STAGING to your public API
   # (e.g. https://api.example.com) so branch/PR images are not stuck on localhost when deployed.
   BUILD_BUILD_ARGS: |
-    NEXT_PUBLIC_API_BASE_URL='https://api.duychien.shop/'
+    NEXT_PUBLIC_API_BASE_URL=https://api.duychien.shop
 
 jobs:
   build:
