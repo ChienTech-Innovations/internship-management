@@ -52,4 +52,5 @@ All workflows are in place. Here's a summary of everything created:
 | `ECS_FRONTEND_SERVICE_STAGING/PRODUCTION` | Deploy workflows |
 | `ECS_BACKEND_TASKDEF_STAGING/PRODUCTION` | Deploy workflows |
 | `ECS_FRONTEND_TASKDEF_STAGING/PRODUCTION` | Deploy workflows |
-| `NEXT_PUBLIC_API_BASE_URL_PRODUCTION` | Release workflow |
+| `NEXT_PUBLIC_API_BASE_URL_PRODUCTION` | Release workflow (bake public API URL for browser clients) |
+| `NEXT_PUBLIC_API_BASE_URL_STAGING` | `build-next.yml` branch/PR image builds (optional; defaults to localhost) |

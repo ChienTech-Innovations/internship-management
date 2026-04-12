@@ -12,8 +12,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# NEXT_PUBLIC_* vars are embedded into the JS bundle at build time.
-# Pass the real backend URL via --build-arg (or docker compose build.args).
+# NEXT_PUBLIC_* vars are embedded into the JS bundle at build time (not at container start).
+# Kubernetes env on the Deployment cannot override this — rebuild with the URL the browser
+# must call (public API / ingress), not cluster Service DNS.
+# Example: docker build --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.example.com -f fe/Dockerfile fe
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_TELEMETRY_DISABLED=1
