@@ -15,6 +15,7 @@ export class AuthService {
     const user = await this.usersService.findByUsername(loginDto.username);
 
     if (user && (await bcrypt.compare(loginDto.password, user.passwordHash))) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { passwordHash, ...result } = user;
       return result;
     }
@@ -22,7 +23,7 @@ export class AuthService {
     return null;
   }
 
-  async login(user: any) {
+  login(user: any) {
     const payload = { sub: user.id, email: user.email, role: user.role };
 
     return {
@@ -38,7 +39,7 @@ export class AuthService {
   }
 
   // Refresh token method
-  async refreshToken(user: any) {
+  refreshToken(user: any) {
     const payload = { sub: user.id, email: user.email, role: user.role };
 
     return {
@@ -47,7 +48,7 @@ export class AuthService {
   }
 
   // Logout
-  async logout() {
+  logout() {
     // Có thể implement blacklist token ở đây
     return { message: 'Successfully logged out' };
   }

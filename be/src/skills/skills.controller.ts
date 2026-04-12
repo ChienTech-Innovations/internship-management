@@ -31,6 +31,7 @@ export class SkillsController {
   @Roles('admin', 'mentor')
   @Post()
   async create(@Body() createSkillDto: CreateSkillDto, @User() user: any) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return await this.skillsService.create(createSkillDto, user.id);
   }
 
@@ -47,6 +48,7 @@ export class SkillsController {
   @Roles('admin', 'mentor')
   @Get()
   async findAllByUserId(@User() user: any, @Query() query: GetSkillQueryDto) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return await this.skillsService.findAllByUserId(user.id, query);
   }
 

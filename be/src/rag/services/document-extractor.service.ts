@@ -124,7 +124,7 @@ export class DocumentExtractorService {
       const mentorName = ii.mentor?.fullName || ii.mentorId || '—';
       const planName = ii.plan?.name || '—';
       docs.push({
-        content: `Thực tập sinh: ${internName}, mentor: ${mentorName}, kế hoạch: ${planName}, lĩnh vực: ${ii.field || '—'}, trạng thái: ${ii.status}, từ ${ii.startDate} đến ${ii.endDate}.`,
+        content: `Thực tập sinh: ${internName}, mentor: ${mentorName}, kế hoạch: ${planName}, lĩnh vực: ${ii.field || '—'}, trạng thái: ${ii.status}, từ ${ii.startDate.toLocaleDateString()} đến ${ii.endDate.toLocaleDateString()}.`,
         metadata: { ...meta, type: 'intern_info', entityId: ii.id },
       });
     }
@@ -138,7 +138,7 @@ export class DocumentExtractorService {
           .filter(Boolean)
           .join(', ') || '—';
       docs.push({
-        content: `Bài tập: ${taskName}, kế hoạch: ${planName}, giao cho: ${assigneeName}, ước lượng: ${a.estimatedTime}h, trạng thái: ${a.status}, hạn: ${a.dueDate || '—'}. Kỹ năng: ${skillNames}.`,
+        content: `Bài tập: ${taskName}, kế hoạch: ${planName}, giao cho: ${assigneeName}, ước lượng: ${a.estimatedTime}h, trạng thái: ${a.status}, hạn: ${a.dueDate.toLocaleDateString() || '—'}. Kỹ năng: ${skillNames}.`,
         metadata: { ...meta, type: 'assignment', entityId: a.id },
       });
     }
@@ -169,7 +169,7 @@ export class DocumentExtractorService {
       const internName = ii.intern?.fullName || ii.internId;
       const planName = ii.plan?.name || '—';
       docs.push({
-        content: `Thực tập sinh (nhóm của mentor): ${internName}, kế hoạch: ${planName}, lĩnh vực: ${ii.field || '—'}, trạng thái: ${ii.status}, từ ${ii.startDate} đến ${ii.endDate}.`,
+        content: `Thực tập sinh (nhóm của mentor): ${internName}, kế hoạch: ${planName}, lĩnh vực: ${ii.field || '—'}, trạng thái: ${ii.status}, từ ${ii.startDate.toLocaleDateString()} đến ${ii.endDate.toLocaleDateString()}.`,
         metadata: {
           ...meta,
           type: 'intern_info',
@@ -269,7 +269,7 @@ export class DocumentExtractorService {
         internInfo.mentor?.fullName || internInfo.mentorId || '—';
       const planName = internInfo.plan?.name || '—';
       docs.push({
-        content: `Thông tin thực tập của tôi: mentor: ${mentorName}, kế hoạch: ${planName}, lĩnh vực: ${internInfo.field || '—'}, trạng thái: ${internInfo.status}, từ ${internInfo.startDate} đến ${internInfo.endDate}.`,
+        content: `Thông tin thực tập của tôi: mentor: ${mentorName}, kế hoạch: ${planName}, lĩnh vực: ${internInfo.field || '—'}, trạng thái: ${internInfo.status}, từ ${internInfo.startDate.toLocaleDateString()} đến ${internInfo.endDate.toLocaleDateString()}.`,
         metadata: { ...meta, type: 'intern_info', entityId: internInfo.id },
       });
     }
@@ -289,7 +289,7 @@ export class DocumentExtractorService {
           .filter(Boolean)
           .join(', ') || '—';
       docs.push({
-        content: `Bài tập của tôi: ${taskName}, kế hoạch: ${planName}, ước lượng: ${a.estimatedTime}h, trạng thái: ${a.status}, hạn: ${a.dueDate || '—'}. Kỹ năng: ${skillNames}. ${a.feedback ? `Phản hồi: ${a.feedback}` : ''}`,
+        content: `Bài tập của tôi: ${taskName}, kế hoạch: ${planName}, ước lượng: ${a.estimatedTime}h, trạng thái: ${a.status}, hạn: ${a.dueDate.toLocaleDateString() || '—'}. Kỹ năng: ${skillNames}. ${a.feedback ? `Phản hồi: ${a.feedback}` : ''}`,
         metadata: { ...meta, type: 'assignment', entityId: a.id },
       });
     }

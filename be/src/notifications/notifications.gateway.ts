@@ -39,6 +39,7 @@ export class NotificationsGateway
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const payload = this.jwtService.verify(token, {
         secret: process.env.JWT_SECRET || 'secret',
       });
@@ -51,7 +52,7 @@ export class NotificationsGateway
 
       // Lưu userId vào client data và join room riêng
       client.data.userId = userId;
-      client.join(`user_${userId}`);
+      void client.join(`user_${userId}`);
       this.logger.log(`User ${userId} connected (socket: ${client.id})`);
     } catch (error) {
       this.logger.warn(`Client ${client.id} auth failed: ${error.message}`);

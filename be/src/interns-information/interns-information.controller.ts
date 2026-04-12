@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  ForbiddenException,
-  Get,
-  InternalServerErrorException,
-  NotFoundException,
-  Param,
-  Put,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
 import { InternsInformationService } from './interns-information.service';
 import { UpdateInternInformationDto } from './dto/update-intern-information.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';

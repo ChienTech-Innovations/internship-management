@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TrainingPlan } from './entities/training-plan.entity';
-import { DataSource, In, IsNull, Not, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { TrainingPlanSkill } from './entities/training-plan-skill.entity';
 import { CreateTrainingPlanDto } from './dto/create-training-plan.dto';
 import { SimpleUserDto } from 'src/users/dto/simple-user.dto';
@@ -20,7 +20,6 @@ import { plainToInstance } from 'class-transformer';
 import { InternInformation } from 'src/interns-information/entities/intern-information.entity';
 import { InternsInformationService } from 'src/interns-information/interns-information.service';
 import { InternInformationDto } from 'src/interns-information/dto/intern-information.dto';
-import { User } from 'src/users/entities/user.entity';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { NotificationType } from 'src/notifications/entities/notification.entity';
 // import chromium from 'chrome-aws-lambda';
@@ -316,6 +315,7 @@ export class TrainingPlansService {
 
       // Validate skills if provided
       if (assignment.skillIds && assignment.skillIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         await this.validateSkillsExist(assignment.skillIds);
       }
 
@@ -428,6 +428,7 @@ export class TrainingPlansService {
 
             // Create new assignments
             for (const assignmentData of assignments) {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
               const { skillIds, planId, ...assignmentFields } = assignmentData;
 
               // Ensure planId is set correctly and not null
@@ -522,14 +523,6 @@ export class TrainingPlansService {
         internsInfo.mentorId = trainingPlan.createdBy;
         internsInfo.status = 'InProgress';
         await manager.save(InternInformation, internsInfo);
-
-        // Change isAssigned in User entity to true
-        const updatedInternUserResult = await manager.update(User, internId, {
-          isAssigned: true,
-        });
-        const updatedMentorUserResult = await manager.update(User, user.id, {
-          isAssigned: true,
-        });
 
         // change Assignment's assignedTo to the internId
         const assignmentsToUpdate = await manager.find(Assignment, {

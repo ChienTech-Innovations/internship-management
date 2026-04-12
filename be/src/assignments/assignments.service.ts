@@ -84,6 +84,7 @@ export class AssignmentsService {
 
       throw new InternalServerErrorException(
         'Error creating assignment',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         error.message,
       );
     }
@@ -143,6 +144,7 @@ export class AssignmentsService {
         .leftJoinAndSelect('skills.skill', 'skill')
         .leftJoinAndSelect('assignment.task', 'task')
         .leftJoinAndSelect('assignment.assignee', 'assignee')
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         .where(whereCondition)
         .getMany();
 
@@ -152,6 +154,7 @@ export class AssignmentsService {
     } catch (error) {
       throw new InternalServerErrorException(
         'Error fetching assignments',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         error.message,
       );
     }
@@ -187,6 +190,7 @@ export class AssignmentsService {
         .leftJoinAndSelect('skills.skill', 'skill')
         .leftJoinAndSelect('assignment.task', 'task')
         .leftJoinAndSelect('assignment.assignee', 'assignee')
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         .where(whereCondition)
         .getMany();
 
@@ -196,6 +200,7 @@ export class AssignmentsService {
     } catch (error) {
       throw new InternalServerErrorException(
         'Error fetching assignments',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         error.message,
       );
     }
@@ -229,6 +234,7 @@ export class AssignmentsService {
         .leftJoinAndSelect('skills.skill', 'skill')
         .leftJoinAndSelect('assignment.task', 'task')
         .leftJoinAndSelect('assignment.assignee', 'assignee')
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         .where(whereCondition)
         .getOne();
 
@@ -242,6 +248,7 @@ export class AssignmentsService {
     } catch (error) {
       throw new InternalServerErrorException(
         'Error fetching assignment',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         error.message,
       );
     }
@@ -333,6 +340,7 @@ export class AssignmentsService {
 
       throw new InternalServerErrorException(
         `Error updating assignment status to ${status}`,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         error.message,
       );
     }
@@ -377,6 +385,7 @@ export class AssignmentsService {
 
       throw new InternalServerErrorException(
         'Error submitting assignment',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         error.message,
       );
     }
@@ -437,6 +446,7 @@ export class AssignmentsService {
 
       throw new InternalServerErrorException(
         'Error reviewing assignment',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         error.message,
       );
     }
@@ -534,6 +544,7 @@ export class AssignmentsService {
 
       throw new InternalServerErrorException(
         'Error updating assignment',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         error.message,
       );
     }

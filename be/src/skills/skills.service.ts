@@ -9,7 +9,7 @@ import { CreateSkillDto } from './dto/create-skill.dto';
 import { UpdateSkillDto } from './dto/update-skill.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Skill } from './entities/skill.entity';
-import { DataSource, Not, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { SkillDto } from './dto/skill.dto';
 import { plainToInstance } from 'class-transformer';
 import { SimpleUserDto } from 'src/users/dto/simple-user.dto';

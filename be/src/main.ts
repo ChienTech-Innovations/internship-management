@@ -29,4 +29,4 @@ async function bootstrap() {
   console.log(`Application is running on: ${await app.getUrl()}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 }
-bootstrap();
+void bootstrap();

@@ -10,7 +10,12 @@ import {
 } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
@@ -70,7 +75,9 @@ export class AttendanceController {
     return this.attendanceService.getMentorWeekView(user.id, weekStart);
   }
 
-  @ApiOperation({ summary: 'Mentor xem chấm công intern theo tháng (calendar)' })
+  @ApiOperation({
+    summary: 'Mentor xem chấm công intern theo tháng (calendar)',
+  })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('mentor', 'admin')
   @ApiQuery({ name: 'month', required: true, example: '2026-03' })
@@ -122,10 +129,7 @@ export class AttendanceController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('intern')
   @Delete(':id')
-  async deleteAttendance(
-    @User() user: SimpleUserDto,
-    @Param('id') id: string,
-  ) {
+  async deleteAttendance(@User() user: SimpleUserDto, @Param('id') id: string) {
     return this.attendanceService.deleteAttendance(id, user.id);
   }
 }

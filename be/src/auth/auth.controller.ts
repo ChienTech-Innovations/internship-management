@@ -58,7 +58,7 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  async logout() {
+  logout() {
     return this.authService.logout();
   }
 }
