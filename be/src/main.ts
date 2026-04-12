@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { SwaggerSetupConfig } from './configs/swagger.config';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { CORS_CONFIG } from './configs/cors.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -22,26 +23,7 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new ResponseInterceptor());
 
-  app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      'https://internship-management-app-rouge.vercel.app',
-    ],
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Origin',
-      'X-Requested-With',
-      'Content-Type',
-      'Accept',
-      'Authorization',
-      'Access-Control-Allow-Headers',
-      'Access-Control-Request-Method',
-      'Access-Control-Request-Headers',
-    ],
-    credentials: true,
-  });
+  app.enableCors(CORS_CONFIG);
 
   await app.listen(port);
   console.log(`Application is running on: ${await app.getUrl()}`);
