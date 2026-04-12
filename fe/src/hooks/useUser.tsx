@@ -8,8 +8,13 @@ export const useGetUsersById = (id: string) => {
   return useCustomSWR(`/users/${id}`);
 };
 
+type UserFilter = {
+  role?: string;
+  isAssigned?: boolean;
+};
+
 export const useGetUserByPagination = (
-  payload: PayloadGet<Record<string, never>>,
+  payload: PayloadGet<UserFilter>,
   role?: string
 ) => {
   const urlPayload = buildPagingUrlQuery(payload);

@@ -23,14 +23,16 @@ export type UserAllPayloadPagi = UserAllPayload & {
   };
 };
 
+type UserFilter = {
+  role?: string;
+  isAssigned?: boolean;
+};
+
 export const userServices = {
   getUsersById: (id: string) => {
     return get<User>(`/users/${id}`);
   },
-  getUserByPagination: (
-    payload: PayloadGet<Record<string, never>>,
-    role?: string
-  ) => {
+  getUserByPagination: (payload: PayloadGet<UserFilter>, role?: string) => {
     const urlPayload = buildPagingUrlQuery(payload);
     const url = role
       ? `/users?role=${role}${urlPayload.replace("?", "&")}`
