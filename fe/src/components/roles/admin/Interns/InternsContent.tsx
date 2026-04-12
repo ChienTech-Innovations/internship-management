@@ -35,14 +35,16 @@ export default function InternsContent() {
     "CREATE" | "EDIT" | "DELETE" | "NONE"
   >("NONE");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const { data, mutate, isLoading } = useGetUserByPagination(
-    {
-      page: pagination.pageIndex + 1,
-      limit: pagination.pageSize,
-      search: debouncedSearchName
-    },
-    "intern"
-  );
+  const { data, mutate, isLoading } = useGetUserByPagination({
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    search: debouncedSearchName.trim() || undefined,
+    filter: {
+      role: "intern",
+      ...(statusFilter === "assigned" ? { isAssigned: true } : {}),
+      ...(statusFilter === "unassigned" ? { isAssigned: false } : {})
+    }
+  });
   const users = data?.data?.users;
   const total = data?.data?.total;
 
@@ -54,19 +56,9 @@ export default function InternsContent() {
     return () => clearTimeout(timeout);
   }, [searchName]);
 
-  // const filtered = useMemo(() => {
-  //   if (!users || !Array.isArray(users)) return [];
-  //   return users.filter((i) => {
-  //     const matchSearch = i.fullName
-  //       ?.toLowerCase()
-  //       .includes(debouncedSearch.toLowerCase());
-  //     const matchStatus =
-  //       statusFilter === "all" ||
-  //       (statusFilter === "assigned" && i.isAssigned) ||
-  //       (statusFilter === "unassigned" && !i.isAssigned);
-  //     return matchSearch && matchStatus;
-  //   });
-  // }, [users, debouncedSearch, statusFilter]);
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [statusFilter]);
 
   const handleAdd = () => {
     setDialogMode("CREATE");
@@ -139,9 +131,7 @@ export default function InternsContent() {
 
         <Card className="p-5 rounded-xl relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-cyan-500" />
-          <div className="card-section-title mb-4">
-            Interns List
-          </div>
+          <div className="card-section-title mb-4">Interns List</div>
           <div className="flex items-center gap-4 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -162,7 +152,10 @@ export default function InternsContent() {
                 <SelectItem value="unassigned">Unassigned</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={handleAdd} className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-sm rounded-lg">
+            <Button
+              onClick={handleAdd}
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-sm rounded-lg"
+            >
               <Plus className="w-4 h-4 mr-1" /> Add Intern
             </Button>
           </div>
