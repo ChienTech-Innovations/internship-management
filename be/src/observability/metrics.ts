@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import client, { Histogram, Registry } from 'prom-client';
 
 const METRICS_PREFIX = 'internship_management_';
+const METRICS_LISTENER_ATTACHED = Symbol('metrics_listener_attached');
 
 const registry = new Registry();
 client.collectDefaultMetrics({
@@ -22,9 +23,18 @@ export function observeHttpRequestMetrics(
   res: Response,
   next: NextFunction,
 ): void {
+  const responseWithFlag = res as Response & {
+    [METRICS_LISTENER_ATTACHED]?: boolean;
+  };
+  if (responseWithFlag[METRICS_LISTENER_ATTACHED]) {
+    next();
+    return;
+  }
+  responseWithFlag[METRICS_LISTENER_ATTACHED] = true;
+
   const start = process.hrtime.bigint();
 
-  res.on('finish', () => {
+  res.once('finish', () => {
     const durationInSeconds = Number(process.hrtime.bigint() - start) / 1e9;
     const route = req.route?.path ?? req.path;
 

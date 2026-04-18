@@ -6,20 +6,26 @@ import { SwaggerSetupConfig } from './configs/swagger.config';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { CORS_CONFIG } from './configs/cors.config';
 import { Request, Response } from 'express';
-import { createAppLogger } from './observability/logger';
+import { ServerResponse } from 'http';
 import {
   getPrometheusContentType,
   getPrometheusMetrics,
   observeHttpRequestMetrics,
 } from './observability/metrics';
 import { bootstrapTracing, shutdownTracing } from './observability/tracing';
+import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
+  // Nest + pino + OpenTelemetry can legitimately attach >10 finish listeners per response.
+  // Raise this ceiling only for HTTP responses to avoid noisy false-positive warnings.
+  ServerResponse.prototype.setMaxListeners(
+    Number(process.env.HTTP_RESPONSE_MAX_LISTENERS ?? 30),
+  );
+
   await bootstrapTracing();
 
-  const app = await NestFactory.create(AppModule, {
-    logger: createAppLogger(),
-  });
+  const app = await NestFactory.create(AppModule);
+  app.useLogger(app.get(Logger));
   const port = process.env.PORT || 3000;
 
   // Bật Socket.IO adapter để WebSocket gateway dùng Socket.IO (realtime notifications)
