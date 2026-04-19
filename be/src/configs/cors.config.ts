@@ -17,22 +17,19 @@ const CORS_ORIGINS = [
   'https://backend.backend.svc.cluster.local:3003',
 ];
 
+/**
+ * Do not set `allowedHeaders` to a fixed list. The underlying `cors` package will
+ * mirror `Access-Control-Request-Headers` from the browser preflight when omitted.
+ *
+ * OpenTelemetry browser instrumentation (`FetchInstrumentation` with
+ * `propagateTraceHeaderCorsUrls`) injects W3C trace headers on cross-origin fetch,
+ * which changes the preflight header set. A static allow list often breaks after
+ * enabling tracing (browser reports a CORS error even though Origin is allowed).
+ */
 export const CORS_CONFIG: CorsOptions = {
   origin: CORS_ORIGINS,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Origin',
-    'X-Requested-With',
-    'Content-Type',
-    'Accept',
-    'Authorization',
-    'X-Request-Id',
-    'traceparent',
-    'tracestate',
-    'baggage',
-    'Access-Control-Allow-Headers',
-    'Access-Control-Request-Method',
-    'Access-Control-Request-Headers',
-  ],
   credentials: true,
+  /** Cache successful preflight; reduces duplicate OPTIONS from the browser. */
+  maxAge: 86400,
 };

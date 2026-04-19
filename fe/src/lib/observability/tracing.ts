@@ -9,7 +9,10 @@ import {
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
 import { FetchInstrumentation } from "@opentelemetry/instrumentation-fetch";
-import { observabilityConfig } from "@/lib/observability/config";
+import {
+  getFetchTracePropagationUrlRegex,
+  observabilityConfig
+} from "@/lib/observability/config";
 
 declare global {
   interface Window {
@@ -47,7 +50,7 @@ export function initBrowserTracing(): void {
   registerInstrumentations({
     instrumentations: [
       new FetchInstrumentation({
-        propagateTraceHeaderCorsUrls: /.*/,
+        propagateTraceHeaderCorsUrls: getFetchTracePropagationUrlRegex(),
         clearTimingResources: true
       })
     ]

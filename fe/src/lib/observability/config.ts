@@ -1,3 +1,26 @@
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * URLs matched here get W3C trace headers on fetch. Only cross-origin calls that
+ * match need this (CORS); scope to your API (not a catch-all regex) so trace
+ * headers are not injected into third-party fetches.
+ *
+ * Optional env NEXT_PUBLIC_OTEL_PROPAGATE_TRACE_CORS_REGEX: full regex string if
+ * the default derived from NEXT_PUBLIC_API_BASE_URL is not enough (multiple API hosts).
+ */
+export function getFetchTracePropagationUrlRegex(): RegExp {
+  const custom = process.env.NEXT_PUBLIC_OTEL_PROPAGATE_TRACE_CORS_REGEX?.trim();
+  if (custom) {
+    return new RegExp(custom);
+  }
+  const base = (
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001"
+  ).replace(/\/$/, "");
+  return new RegExp(`^${escapeRegExp(base)}`);
+}
+
 export const observabilityConfig = {
   enabled: process.env.NEXT_PUBLIC_OBSERVABILITY_ENABLED !== "false",
   serviceName:
