@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { API_URL } from "@/constants";
+import { appLogger } from "@/lib/observability/logger";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Config, ResponseBase } from "@/types/basic.type";
 
@@ -19,6 +20,8 @@ const makeRequest = async <TData = any>(
   options: RequestInit = {},
   config?: Config
 ): Promise<ResponseBase<TData>> => {
+  const now = () =>
+    typeof performance !== "undefined" ? performance.now() : Date.now();
   const { baseUrl = API_URL } = config ?? {};
 
   const { accessToken } = useAuthStore.getState();
@@ -29,6 +32,7 @@ const makeRequest = async <TData = any>(
   };
 
   const finalUrl = `${baseUrl}${url}`;
+  const startTime = now();
 
   try {
     const response = await fetch(finalUrl, {
@@ -60,11 +64,34 @@ const makeRequest = async <TData = any>(
         (typeof resData === "string" ? resData : null) ||
         responseText ||
         `HTTP Error ${response.status}`;
+      appLogger.error("api_request_failed", {
+        url: finalUrl,
+        method: options.method ?? "GET",
+        status: response.status,
+        durationMs: Number((now() - startTime).toFixed(2))
+      });
       throw new Error(errorMessage);
     }
 
+    appLogger.metric(
+      "api.request.duration",
+      Number((now() - startTime).toFixed(2)),
+      "ms",
+      {
+        url: finalUrl,
+        method: options.method ?? "GET",
+        status: response.status
+      }
+    );
+
     return resData as ResponseBase<TData>;
   } catch (error) {
+    appLogger.error("api_request_exception", {
+      url: finalUrl,
+      method: options.method ?? "GET",
+      durationMs: Number((now() - startTime).toFixed(2)),
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
     // If it's already an Error with message, re-throw it
     if (error instanceof Error) {
       throw error;

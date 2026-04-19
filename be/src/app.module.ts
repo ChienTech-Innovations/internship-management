@@ -17,6 +17,8 @@ import { RagModule } from './rag/rag.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReportsModule } from './reports/reports.module';
+import { LoggerModule } from 'nestjs-pino';
+import { pinoLoggerConfig } from './observability/pino-logger.config';
 import 'dotenv/config';
 
 @Module({
@@ -24,6 +26,7 @@ import 'dotenv/config';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    LoggerModule.forRoot(pinoLoggerConfig),
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,

@@ -15,6 +15,11 @@ services:
         required: false
     ports:
       - "3001:3000"
+    environment:
+      OTEL_ENABLED: "true"
+      OTEL_SERVICE_NAME: internship-management-be
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      LOG_LEVEL: info
     healthcheck:
       test: ["CMD", "node", "-e",
         "require('net').createConnection(3000,'localhost').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
@@ -22,6 +27,9 @@ services:
       timeout: 5s
       start_period: 20s
       retries: 3
+    depends_on:
+      jaeger:
+        condition: service_started
 
   # ── Frontend (Next.js) ────────────────────────────────────────────────────────
   frontend:
@@ -36,11 +44,93 @@ services:
     env_file:
       - path: ./fe/.env
         required: false
+    environment:
+      # Inside Docker network, collector is reachable by service name, not localhost.
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
     ports:
       - "3000:3000"
     depends_on:
       backend:
         condition: service_healthy
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.59
+    restart: unless-stopped
+    command:
+      - "--collector.otlp.enabled=true"
+      - "--collector.otlp.http.host-port=0.0.0.0:4318"
+      - "--collector.otlp.grpc.host-port=0.0.0.0:4317"
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      backend:
+        condition: service_started
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.0
+    restart: unless-stopped
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      SERVER_HOST: 0.0.0.0
+      SERVER_PUBLICBASEURL: http://localhost:5601
+    depends_on:
+      elasticsearch:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      prometheus:
+        condition: service_started
+      jaeger:
+        condition: service_started
+
+  fluent-bit:
+    image: cr.fluentbit.io/fluent/fluent-bit:3.1.9
+    restart: unless-stopped
+    user: root
+    command: ["/fluent-bit/bin/fluent-bit", "-c", "/fluent-bit/etc/fluent-bit.conf"]
+    volumes:
+      - ./observability/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./observability/fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      elasticsearch:
+        condition: service_started
+
 volumes:
   chroma_data:
+  elasticsearch_data:
