@@ -44,6 +44,9 @@ services:
     env_file:
       - path: ./fe/.env
         required: false
+    environment:
+      # Inside Docker network, collector is reachable by service name, not localhost.
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
     ports:
       - "3000:3000"
     depends_on:
@@ -53,6 +56,10 @@ services:
   jaeger:
     image: jaegertracing/all-in-one:1.59
     restart: unless-stopped
+    command:
+      - "--collector.otlp.enabled=true"
+      - "--collector.otlp.http.host-port=0.0.0.0:4318"
+      - "--collector.otlp.grpc.host-port=0.0.0.0:4317"
     ports:
       - "16686:16686"
       - "4318:4318"
@@ -87,8 +94,28 @@ services:
       - "5601:5601"
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      SERVER_HOST: 0.0.0.0
+      SERVER_PUBLICBASEURL: http://localhost:5601
     depends_on:
       elasticsearch:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      prometheus:
+        condition: service_started
+      jaeger:
         condition: service_started
 
   fluent-bit:

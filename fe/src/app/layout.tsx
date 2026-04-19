@@ -3,6 +3,7 @@ import "./globals.css";
 import SWRProvider from "@/lib/swr/SWRProvider";
 import { Toaster } from "@/components/ui/toaster";
 import AuthProvider from "@/components/providers/AuthProvider";
+import ObservabilityProvider from "@/components/providers/ObservabilityProvider";
 
 export const metadata: Metadata = {
   title: "Interns Management App",
@@ -26,10 +27,12 @@ export default function RootLayout({
     <>
       <html lang="en">
         <body>
-          <SWRProvider>
-            <AuthProvider>{children}</AuthProvider>
-            <Toaster />
-          </SWRProvider>
+          <ObservabilityProvider>
+            <SWRProvider>
+              <AuthProvider>{children}</AuthProvider>
+              <Toaster />
+            </SWRProvider>
+          </ObservabilityProvider>
         </body>
       </html>
     </>
