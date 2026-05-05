@@ -91,7 +91,7 @@ runs:
         cache-to: type=gha,mode=max
 
     - name: Run Trivy image scan
-      uses: aquasecurity/trivy-action@0.28.0
+      uses: aquasecurity/trivy-action@master
       with:
         image-ref: ${{ steps.meta.outputs.image-uri }}
         format: "table"
@@ -99,7 +99,7 @@ runs:
         # exit-code: "1"
 
     - name: Run Trivy image scan (SARIF)
-      uses: aquasecurity/trivy-action@0.28.0
+      uses: aquasecurity/trivy-action@master
       if: always()
       with:
         image-ref: ${{ steps.meta.outputs.image-uri }}
@@ -108,7 +108,7 @@ runs:
         severity: ${{ inputs.trivy-severity }}
 
     - name: Upload Trivy image SARIF
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@v4
       if: always()
       continue-on-error: true
       with:
