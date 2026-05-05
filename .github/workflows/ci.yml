@@ -17,6 +17,11 @@ on:
         required: false
         type: boolean
         default: false
+      node-version:
+        description: "Node.js version"
+        required: false
+        type: string
+        default: "22"
     secrets:
       SNYK_TOKEN:
         required: false
@@ -34,15 +39,18 @@ jobs:
   lint-test:
     name: Lint & test
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: ${{ inputs.node-version }}
           cache: npm
           cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
 
@@ -53,19 +61,38 @@ jobs:
         continue-on-error: true
         run: npm run lint
 
-      - name: Run unit tests with coverage
+      - name: Unit tests and coverage
         if: inputs.run-coverage
         continue-on-error: true
-        uses: ./.github/actions/unit-test
-        with:
-          WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        run: |
+          npm run test:coverage
+          COVERAGE="0"
+          if [ -f coverage/coverage-summary.json ]; then
+            COVERAGE=$(node -e "const c = require('./coverage/coverage-summary.json'); console.log(c.total.lines.pct)")
+          fi
+          {
+            echo "## Unit Tests"
+            echo ""
+            echo "- **Coverage:** ${COVERAGE}%"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-  # ── SCA security scan ────────────────────────────────────────────────────────
+      - name: Upload coverage artifact
+        if: inputs.run-coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ github.sha }}
+          path: ${{ inputs.working-directory }}/coverage/
+          retention-days: 7
+
+  # ── SCA security scan (parallel với lint-test: 1 checkout, không npm ci) ─────
   sca-scan:
     name: SCA Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
 
       - uses: ./.github/actions/sca-scan
         with:
