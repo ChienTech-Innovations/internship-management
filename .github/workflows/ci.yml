@@ -21,6 +21,14 @@ on:
       SNYK_TOKEN:
         required: false
 
+permissions:
+  packages: write
+  contents: write
+  checks: read
+  actions: write
+  id-token: write
+  security-events: write
+
 jobs:
   # ── Lint & test ──────────────────────────────────────────────────────────────
   lint-test:
@@ -56,8 +64,6 @@ jobs:
   sca-scan:
     name: SCA Scan
     runs-on: ubuntu-latest
-    permissions:
-      security-events: write
     steps:
       - uses: actions/checkout@v4
 
