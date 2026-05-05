@@ -1,0 +1,63 @@
+name: Unit Test
+description: Runs Vitest unit tests with coverage report
+
+inputs:
+  NODE_VERSION:
+    description: "Node.js version"
+    required: false
+    default: "22.x"
+  WORKING_DIRECTORY:
+    description: "Working directory for frontend"
+    required: false
+    default: "fe"
+
+outputs:
+  COVERAGE_PERCENTAGE:
+    description: "Line coverage percentage"
+    value: ${{ steps.coverage.outputs.COVERAGE_PERCENTAGE }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.NODE_VERSION }}
+        cache: "npm"
+        cache-dependency-path: ${{ inputs.WORKING_DIRECTORY }}/package-lock.json
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ inputs.WORKING_DIRECTORY }}
+      run: npm ci
+
+    - name: Run unit tests with coverage
+      shell: bash
+      working-directory: ${{ inputs.WORKING_DIRECTORY }}
+      run: npm run test:coverage
+
+    - name: Extract coverage percentage
+      id: coverage
+      shell: bash
+      working-directory: ${{ inputs.WORKING_DIRECTORY }}
+      run: |
+        if [ -f coverage/coverage-summary.json ]; then
+          COVERAGE=$(node -e "const c = require('./coverage/coverage-summary.json'); console.log(c.total.lines.pct)")
+          echo "COVERAGE_PERCENTAGE=$COVERAGE" >> "$GITHUB_OUTPUT"
+        else
+          echo "COVERAGE_PERCENTAGE=0" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Upload coverage artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report-${{ github.sha }}
+        path: ${{ inputs.WORKING_DIRECTORY }}/coverage/
+        retention-days: 7
+
+    - name: Test summary
+      shell: bash
+      run: |
+        echo "## Unit Tests" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Coverage:** ${{ steps.coverage.outputs.COVERAGE_PERCENTAGE }}%" >> $GITHUB_STEP_SUMMARY

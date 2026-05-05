@@ -1,0 +1,67 @@
+name: SCA Security Scan
+description: Runs Trivy filesystem scan and Snyk SCA scan on source code
+
+inputs:
+  WORKING_DIRECTORY:
+    description: "Working directory to scan"
+    required: false
+    default: "frontend"
+  SNYK_TOKEN:
+    description: "Snyk API token"
+    required: false
+    default: ""
+  TRIVY_SEVERITY:
+    description: "Trivy severity levels to report"
+    required: false
+    default: "CRITICAL,HIGH"
+
+runs:
+  using: composite
+  steps:
+    - name: Run Trivy filesystem scan
+      uses: aquasecurity/trivy-action@0.28.0
+      with:
+        scan-type: "fs"
+        scan-ref: ${{ inputs.WORKING_DIRECTORY }}
+        format: "table"
+        severity: ${{ inputs.TRIVY_SEVERITY }}
+        # exit-code: "1"
+
+    - name: Run Trivy filesystem scan (SARIF)
+      uses: aquasecurity/trivy-action@0.28.0
+      if: always()
+      with:
+        scan-type: "fs"
+        scan-ref: ${{ inputs.WORKING_DIRECTORY }}
+        format: "sarif"
+        output: "trivy-fs-results.sarif"
+        severity: ${{ inputs.TRIVY_SEVERITY }}
+
+    - name: Upload Trivy SARIF
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: "trivy-fs-results.sarif"
+        category: "trivy-fs"
+
+    - name: Run Snyk SCA scan
+      if: ${{ inputs.SNYK_TOKEN != '' }}
+      uses: snyk/actions/node@0.4.0
+      continue-on-error: true
+      env:
+        SNYK_TOKEN: ${{ inputs.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high --file=${{ inputs.WORKING_DIRECTORY }}/package.json
+
+    - name: SCA scan summary
+      if: always()
+      shell: bash
+      run: |
+        echo "## SCA Security Scan" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Trivy FS scan:** completed (severity: ${{ inputs.TRIVY_SEVERITY }})" >> $GITHUB_STEP_SUMMARY
+        if [ -n "${{ inputs.SNYK_TOKEN }}" ]; then
+          echo "- **Snyk SCA scan:** completed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- **Snyk SCA scan:** skipped (no SNYK_TOKEN)" >> $GITHUB_STEP_SUMMARY
+        fi

@@ -1,68 +1,65 @@
 name: CI
 
 on:
-  pull_request:
-    branches:
-      - main
-      - develop
-  push:
-    branches:
-      - main
-      - develop
+  workflow_call:
+    inputs:
+      working-directory:
+        description: "App directory to validate (e.g. be, fe)"
+        required: true
+        type: string
+      install-flags:
+        description: "Extra flags passed to npm ci"
+        required: false
+        type: string
+        default: ""
+      run-coverage:
+        description: "Run tests with coverage report instead of plain test"
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      SNYK_TOKEN:
+        required: false
 
 jobs:
-  # ── Backend lint + test ──────────────────────────────────────────────────────
-  backend:
-    name: Backend — lint & test
+  # ── Lint & test ──────────────────────────────────────────────────────────────
+  lint-test:
+    name: Lint & test
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: be
-
+        working-directory: ${{ inputs.working-directory }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: be/package-lock.json
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci ${{ inputs.install-flags }}
 
       - name: Lint
         run: npm run lint
 
-      - name: Unit tests
-        run: npm run test -- --passWithNoTests --ci
-
-  # ── Frontend lint + build ────────────────────────────────────────────────────
-  frontend:
-    name: Frontend — lint & build
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: fe
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Run unit tests with coverage
+        if: inputs.run-coverage
+        uses: ./.github/actions/unit-test
         with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: fe/package-lock.json
+          WORKING_DIRECTORY: ${{ inputs.working-directory }}
 
-      - name: Install dependencies
-        run: npm ci
+  # ── SCA security scan ────────────────────────────────────────────────────────
+  sca-scan:
+    name: SCA Scan
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Build (type-check + bundle)
-        run: npm run build
+      - uses: ./.github/actions/sca-scan
+        with:
+          WORKING_DIRECTORY: ${{ inputs.working-directory }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}

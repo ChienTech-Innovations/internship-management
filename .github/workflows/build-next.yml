@@ -9,6 +9,7 @@ on:
       - "fe/**"
       - ".github/workflows/build-next.yml"
       - ".github/actions/build-push-ecr/**"
+      - ".github/actions/output-env/**"
   pull_request:
     branches:
       - main
@@ -20,6 +21,10 @@ on:
       - ".github/actions/output-env/**"
   workflow_dispatch:
 
+concurrency:
+  group: build-next-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   deployments: read
   pull-requests: read
@@ -29,6 +34,7 @@ permissions:
   contents: write
   packages: write
   id-token: write
+  security-events: write
 
 env:
   BUILD_CONTEXT: ./fe
@@ -39,7 +45,17 @@ env:
     NEXT_PUBLIC_API_BASE_URL=https://api.duychien.shop
 
 jobs:
+  ci:
+    name: Frontend CI
+    uses: ./.github/workflows/ci.yml
+    with:
+      working-directory: fe
+      run-coverage: true
+    secrets:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
   build:
+    needs: [ci]
     environment: HUB
     name: Build frontend image
     runs-on: ubuntu-latest
@@ -67,7 +83,6 @@ jobs:
           if [ "${EVENT_NAME}" = "pull_request" ]; then
             TAG="fe-pr-${PR_NUMBER}-${SHORT_SHA}"
           else
-            # Sanitize branch name for use as Docker tag
             SAFE_BRANCH="$(echo "${BRANCH}" | sed 's/[^a-zA-Z0-9._-]/-/g')"
             TAG="fe-${SAFE_BRANCH}-${SHORT_SHA}"
           fi
