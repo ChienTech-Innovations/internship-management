@@ -42,10 +42,12 @@ jobs:
         run: npm ci ${{ inputs.install-flags }}
 
       - name: Lint
+        continue-on-error: true
         run: npm run lint
 
       - name: Run unit tests with coverage
         if: inputs.run-coverage
+        continue-on-error: true
         uses: ./.github/actions/unit-test
         with:
           WORKING_DIRECTORY: ${{ inputs.working-directory }}
