@@ -21,6 +21,10 @@ on:
       - ".github/actions/output-env/**"
   workflow_dispatch:
 
+concurrency:
+  group: build-nest-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   deployments: read
   pull-requests: read
@@ -30,13 +34,24 @@ permissions:
   contents: write
   packages: write
   id-token: write
+  security-events: write
 
 env:
   BUILD_CONTEXT: ./be
   BUILD_DOCKERFILE: ./be/Dockerfile
 
 jobs:
+  ci:
+    name: Backend CI
+    uses: ./.github/workflows/ci.yml
+    with:
+      working-directory: be
+      install-flags: --legacy-peer-deps
+    secrets:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
   build:
+    needs: [ci]
     environment: HUB
     name: Build backend image
     runs-on: ubuntu-latest
@@ -47,7 +62,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Output environment variables
         id: output-env
@@ -65,7 +80,6 @@ jobs:
           if [ "${EVENT_NAME}" = "pull_request" ]; then
             TAG="be-pr-${PR_NUMBER}-${SHORT_SHA}"
           else
-            # Sanitize branch name for use as Docker tag
             SAFE_BRANCH="$(echo "${BRANCH}" | sed 's/[^a-zA-Z0-9._-]/-/g')"
             TAG="be-${SAFE_BRANCH}-${SHORT_SHA}"
           fi
